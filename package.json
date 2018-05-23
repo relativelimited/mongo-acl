@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "User-level Access Control List for MongoDB/NodeJS/Typescript",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/relativelimited/mongo-acl.git"
+  },
   "scripts": {
     "test": "mocha -r ts-node/register tests/**/*.spec.ts"
   },
