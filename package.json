@@ -1,0 +1,15 @@
+{
+  "name": "mongo-acl",
+  "version": "1.0.0",
+  "description": "User-level Access Control List for MongoDB/NodeJS/Typescript",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Nick Cousins <nick.cousins@ookle.co.uk>",
+  "license": "MIT",
+  "dependencies": {
+    "mongodb": "^3.1.0-beta4",
+    "typescript": "^2.8.3"
+  }
+}
