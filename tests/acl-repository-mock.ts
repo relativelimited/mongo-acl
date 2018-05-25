@@ -34,11 +34,7 @@ export class ACLRepositoryMock implements ACLRepositoryInterface {
     getByID(id: string): Promise<ACLDocument> {
         return new Promise<ACLDocument>((resolve, reject) => {
             const doc = this.aclDocs.find(d => d._id === id);
-            if (doc) {
-                resolve(doc);
-            } else {
-                reject(null);
-            }
+            resolve(doc);
         });
     }
 

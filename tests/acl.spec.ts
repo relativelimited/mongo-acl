@@ -118,18 +118,125 @@ describe('filter', () => {
 
 describe('grant', () => {
     it('should apply grants when no ACL exists', () => {
+        const acl = new ACL(new ACLRepositoryMock([]));
+        return acl.grant('read', 'com.relativelimited.testobject.1', '123')
+            .should.eventually.equal(true);
+    });
+
+    it('should apply grants when ACL exists, but no permission exists for the user', () => {
+        const acl = new ACL(new ACLRepositoryMock([
+            {
+                _id: "com.relativelimited.testobject.1",
+                acl: [
+                    {
+                        name: "view",
+                        users: ["98765432", "24681012"]
+                    }
+                ],
+                created: new Date().toISOString()
+            }
+        ]));
+        return acl.grant('read', 'com.relativelimited.testobject.1', '123')
+            .should.eventually.equal(true);
+    });
+
+    it('should not duplicate permissions when permissions exist for user', async () => {
+        const repo = new ACLRepositoryMock([
+            {
+                _id: "com.relativelimited.testobject.1",
+                acl: [
+                    {
+                        name: "read",
+                        users: ["98765432", "24681012", "123"]
+                    }
+                ],
+                created: new Date().toISOString()
+            }
+        ]);
+        const acl = new ACL(repo);
+        const grantResult = await acl.grant('read', 'com.relativelimited.testobject.1', '123');
+        expect(grantResult).to.equal(true);
+        expect(repo.aclDocs[0].acl[0].users.length).to.equal(3);
+    });
+
+    it('should apply permission for user to multiple models simultaneously', async () => {
         const repo = new ACLRepositoryMock([]);
         const acl = new ACL(repo);
-        return acl.grant('read', 'com.relativelimited.testobject.1', '123').then(d => {
-            console.log(d);
-            console.log(repo);
-            return expect(repo.aclDocs[0].acl).to.contain({
-                    name: 'read',
-                    users: [
-                        '123'
-                    ]
+        const result = await acl.grant('view', ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'], '123');
+        expect(result).to.be.true;
+        expect(repo.aclDocs.length).to.equal(2);
+        expect(repo.aclDocs[0]._id).to.equal('com.relativelimited.testobject.1');
+        expect(repo.aclDocs[0].acl[0].name).to.equal('view');
+        expect(repo.aclDocs[0].acl[0].users).to.contain('123');
+        expect(repo.aclDocs[1]._id).to.equal('com.relativelimited.testobject.2');
+        expect(repo.aclDocs[1].acl[0].name).to.equal('view');
+        expect(repo.aclDocs[1].acl[0].users).to.contain('123');
+    });
+
+    it('should apply permission for user to multiple models that already exist', async () => {
+        const repo = new ACLRepositoryMock([{
+            _id: "com.relativelimited.testobject.1",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012"]
                 }
-            );
-        });
+            ],
+            created: new Date().toISOString()
+        }, {
+            _id: "com.relativelimited.testobject.2",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012"]
+                }
+            ],
+            created: new Date().toISOString()
+        }]);
+        const acl = new ACL(repo);
+        const result = await acl.grant('view', ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'], '123');
+        expect(result).to.be.true;
+        expect(repo.aclDocs.length).to.equal(2);
+        expect(repo.aclDocs[0]._id).to.equal('com.relativelimited.testobject.1');
+        expect(repo.aclDocs[0].acl[0].name).to.equal('view');
+        expect(repo.aclDocs[0].acl[0].users).to.contain('123');
+        expect(repo.aclDocs[0].acl[0].users.length).to.equal(3);
+        expect(repo.aclDocs[1]._id).to.equal('com.relativelimited.testobject.2');
+        expect(repo.aclDocs[1].acl[0].name).to.equal('view');
+        expect(repo.aclDocs[1].acl[0].users).to.contain('123');
+        expect(repo.aclDocs[1].acl[0].users.length).to.equal(3);
+    });
+
+    it('should apply permission for user to multiple models that already exist and do not yet have the permission', async () => {
+        const repo = new ACLRepositoryMock([{
+            _id: "com.relativelimited.testobject.1",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012"]
+                }
+            ],
+            created: new Date().toISOString()
+        }, {
+            _id: "com.relativelimited.testobject.2",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012"]
+                }
+            ],
+            created: new Date().toISOString()
+        }]);
+        const acl = new ACL(repo);
+        const result = await acl.grant('amend', ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'], '123');
+        const permissionToAmendObject1 = await acl.userCan('amend', 'com.relativelimited.testobject.1','123');
+        const permissionToViewObject1 = await acl.userCan('view', 'com.relativelimited.testobject.1','123');
+        const permissionToAmendObject2 = await acl.userCan('amend', 'com.relativelimited.testobject.2','123');
+        const permissionToViewObject2 = await acl.userCan('view', 'com.relativelimited.testobject.2','123');
+        result.should.be.true;
+        permissionToAmendObject1.should.be.true;
+        permissionToAmendObject2.should.be.true;
+        permissionToViewObject1.should.be.false;
+        permissionToViewObject2.should.be.false;
     });
 });

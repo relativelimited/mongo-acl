@@ -13,7 +13,7 @@
   "author": "Nick Cousins <nick.cousins@relativelimited.com>",
   "license": "MIT",
   "dependencies": {
-    "mongo-repo-ts": "^1.0.8",
+    "mongo-repo-ts": "https://registry.npmjs.org/mongo-repo-ts/-/mongo-repo-ts-1.0.10.tgz",
     "mongodb": "^3.1.0-beta4",
     "mongtype": "^3.2.1",
     "typescript": "^2.8.3",

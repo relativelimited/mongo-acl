@@ -10,5 +10,6 @@ export class ACLRepository extends Repository<ACLDocument> implements ACLReposit
 
     constructor(){
         super('acl','net.ookle.api.acl');
+        this.increments = false;
     }
 }
