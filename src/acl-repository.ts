@@ -1,6 +1,5 @@
-import Repository from "./repository";
 import PermissionObject from "./permission-object-interface";
-import {RepositoryDocument, RepositoryInterface} from "./repositoryInterface";
+import {RepositoryDocument, Repository} from "mongo-repo-ts";
 import {ACLRepositoryInterface} from "./acl-repository-interface";
 
 export interface ACLDocument extends RepositoryDocument{
@@ -10,6 +9,6 @@ export interface ACLDocument extends RepositoryDocument{
 export class ACLRepository extends Repository<ACLDocument> implements ACLRepositoryInterface{
 
     constructor(){
-        super('acl');
+        super('acl','net.ookle.api.acl');
     }
 }

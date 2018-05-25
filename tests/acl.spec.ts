@@ -1,6 +1,7 @@
 import "mocha";
 import ACL from "../src/acl";
 import * as chai from "chai";
+import {expect} from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {ACLRepositoryMock} from "./acl-repository-mock";
 
@@ -112,5 +113,23 @@ describe('filter', () => {
             .should.eventually.contain("com.relativelimited.testobject.1")
             .and.contain("com.relativelimited.testobject.2")
             .and.not.contain("com.relativelimited.testobject.3");
+    });
+});
+
+describe('grant', () => {
+    it('should apply grants when no ACL exists', () => {
+        const repo = new ACLRepositoryMock([]);
+        const acl = new ACL(repo);
+        return acl.grant('read', 'com.relativelimited.testobject.1', '123').then(d => {
+            console.log(d);
+            console.log(repo);
+            return expect(repo.aclDocs[0].acl).to.contain({
+                    name: 'read',
+                    users: [
+                        '123'
+                    ]
+                }
+            );
+        });
     });
 });
