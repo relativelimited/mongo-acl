@@ -21,6 +21,15 @@ export default class ACL {
         });
     }
 
+    private static docHasPermissionFor(doc: ACLDocument, permission: string, user: string) {
+        let permitted = false;
+        const perm = doc.acl.find((p: PermissionObject) => p.name === permission);
+        if (perm && perm.users) {
+            permitted = perm.users.indexOf(user) > -1;
+        }
+        return permitted;
+    }
+
     async filter(permission: string, model: string | Array<string>, user: string): Promise<string | Array<string> | null> {
         const models = ACL.arrayFromSingleOrArray(model);
         const responses: Array<Promise<void>> = [];
@@ -39,7 +48,16 @@ export default class ACL {
                 return null;
             }
         });
+    }
 
+    private static arrayFromSingleOrArray(object: any) {
+        const objects = [];
+        if (object instanceof Array) {
+            objects.push(...object);
+        } else {
+            objects.push(object);
+        }
+        return objects;
     }
 
     async grant(permission: string, model: string | Array<string>, user: string): Promise<boolean> {
@@ -72,7 +90,7 @@ export default class ACL {
             if (!ACL.aclHasPermission(doc.acl, permission)) {
                 doc.acl.push(po);
             }
-            const permissionOb: PermissionObject = doc.acl.find(po => po.name === permission) || po;
+            const permissionOb: PermissionObject = ACL.aclHasPermission(doc.acl, permission) || po;
             permissionOb.users.push(user);
             return doc;
         } else {
@@ -80,27 +98,8 @@ export default class ACL {
         }
     }
 
-    private static aclHasPermission(acl: Array<PermissionObject>, permission: string): boolean {
-        return !!acl.find(po => po.name === permission);
-    }
-
-    private static docHasPermissionFor(doc: ACLDocument, permission: string, user: string) {
-        let permitted = false;
-        const perm = doc.acl.find((p: PermissionObject) => p.name === permission);
-        if (perm && perm.users) {
-            permitted = perm.users.indexOf(user) > -1;
-        }
-        return permitted;
-    }
-
-    private static arrayFromSingleOrArray(object: any) {
-        const objects = [];
-        if (object instanceof Array) {
-            objects.push(...object);
-        } else {
-            objects.push(object);
-        }
-        return objects;
+    private static aclHasPermission(acl: Array<PermissionObject>, permission: string): PermissionObject | null {
+        return acl.find(po => po.name === permission) || null;
     }
 
 }
