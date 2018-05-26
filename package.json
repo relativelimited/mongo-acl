@@ -1,6 +1,6 @@
 {
   "name": "mongo-acl",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "User-level Access Control List for MongoDB/NodeJS/Typescript",
   "main": "dist/src/acl.js",
   "types": "dist/src/acl.d.ts",
@@ -14,7 +14,7 @@
   "author": "Nick Cousins <nick.cousins@relativelimited.com>",
   "license": "MIT",
   "dependencies": {
-    "mongo-repo-ts": "^1.0.10",
+    "mongo-repo-ts": "^1.1.0",
     "mongodb": "^3.1.0-beta4",
     "typescript": "^2.8.3",
     "typescript-logging": "^0.6.1"

@@ -1,5 +1,5 @@
 import PermissionObject from "./permission-object-interface";
-import { RepositoryDocument, Repository } from "mongo-repo-ts";
+import { Repository, RepositoryDocument } from "mongo-repo-ts";
 import { ACLRepositoryInterface } from "./acl-repository-interface";
 export interface ACLDocument extends RepositoryDocument {
     acl: Array<PermissionObject>;
