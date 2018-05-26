@@ -1,8 +1,9 @@
 {
   "name": "mongo-acl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "User-level Access Control List for MongoDB/NodeJS/Typescript",
-  "main": "index.js",
+  "main": "dist/src/acl.js",
+  "types":"dist/src/acl.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/relativelimited/mongo-acl.git"
