@@ -194,7 +194,11 @@ describe('grant', () => {
             created: new Date().toISOString()
         }]);
         const acl = new ACL(repo);
-        const result = await acl.grant('view', ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'], '123');
+        const result = await acl.grant('view',
+            [
+                'com.relativelimited.testobject.1',
+                'com.relativelimited.testobject.2'
+            ], '123');
         expect(result).to.be.true;
         expect(repo.aclDocs.length).to.equal(2);
         expect(repo.aclDocs[0]._id).to.equal('com.relativelimited.testobject.1');
@@ -228,15 +232,196 @@ describe('grant', () => {
             created: new Date().toISOString()
         }]);
         const acl = new ACL(repo);
-        const result = await acl.grant('amend', ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'], '123');
-        const permissionToAmendObject1 = await acl.userCan('amend', 'com.relativelimited.testobject.1','123');
-        const permissionToViewObject1 = await acl.userCan('view', 'com.relativelimited.testobject.1','123');
-        const permissionToAmendObject2 = await acl.userCan('amend', 'com.relativelimited.testobject.2','123');
-        const permissionToViewObject2 = await acl.userCan('view', 'com.relativelimited.testobject.2','123');
+        const result = await acl.grant('amend',
+            [
+                'com.relativelimited.testobject.1',
+                'com.relativelimited.testobject.2'
+            ], '123');
+        const permissionToAmendObject1 = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        const permissionToViewObject1 = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        const permissionToAmendObject2 = await acl.userCan('amend', 'com.relativelimited.testobject.2', '123');
+        const permissionToViewObject2 = await acl.userCan('view', 'com.relativelimited.testobject.2', '123');
         result.should.be.true;
         permissionToAmendObject1.should.be.true;
         permissionToAmendObject2.should.be.true;
         permissionToViewObject1.should.be.false;
         permissionToViewObject2.should.be.false;
+    });
+
+    it('should apply permission for multiple users to one model', async () => {
+        const repo = new ACLRepositoryMock([]);
+        const acl = new ACL(repo);
+        const result = await acl.grant('amend', 'com.relativelimited.testobject.1', ['123', '234']);
+        const user1Permission = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        const user2Permission = await acl.userCan('amend', 'com.relativelimited.testobject.1', '234');
+        result.should.be.true;
+        user1Permission.should.be.true;
+        user2Permission.should.be.true;
+    });
+
+    it('should apply permission for multiple users to multiple models', async () => {
+        const repo = new ACLRepositoryMock([]);
+        const acl = new ACL(repo);
+        const result = await acl.grant('amend',
+            ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'],
+            ['123', '234']);
+        const user1Permission1 = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        const user2Permission1 = await acl.userCan('amend', 'com.relativelimited.testobject.1', '234');
+        const user1Permission2 = await acl.userCan('amend', 'com.relativelimited.testobject.2', '123');
+        const user2Permission2 = await acl.userCan('amend', 'com.relativelimited.testobject.2', '234');
+        result.should.be.true;
+        user1Permission1.should.be.true;
+        user2Permission1.should.be.true;
+        user1Permission2.should.be.true;
+        user2Permission2.should.be.true;
+    });
+
+    it('should apply multiple permissions for a user to a model', async () => {
+        const repo = new ACLRepositoryMock([]);
+        const acl = new ACL(repo);
+        const result = await acl.grant(['view', 'amend'], 'com.relativelimited.testobject.1', '123');
+        result.should.be.true;
+        const userCanViewObject = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        const userCanAmendObject = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        userCanViewObject.should.be.true;
+        userCanAmendObject.should.be.true;
+    });
+
+    it('should apply multiple permissions for multiple users to multiple models', async () => {
+        const repo = new ACLRepositoryMock([]);
+        const acl = new ACL(repo);
+        const result = await acl.grant(['view', 'amend'], ['com.relativelimited.testobject.1', 'com.relativelimited.testobject.2'], ['123', '234']);
+        result.should.be.true;
+        const user1CanViewObject1 = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        const user1CanViewObject2 = await acl.userCan('view', 'com.relativelimited.testobject.2', '123');
+        const user1CanAmendObject1 = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        const user1CanAmendObject2 = await acl.userCan('amend', 'com.relativelimited.testobject.2', '123');
+        const user2CanViewObject1 = await acl.userCan('view', 'com.relativelimited.testobject.1', '234');
+        const user2CanViewObject2 = await acl.userCan('view', 'com.relativelimited.testobject.2', '234');
+        const user2CanAmendObject1 = await acl.userCan('amend', 'com.relativelimited.testobject.1', '234');
+        const user2CanAmendObject2 = await acl.userCan('amend', 'com.relativelimited.testobject.2', '234');
+        user1CanViewObject1.should.be.true;
+        user1CanAmendObject1.should.be.true;
+        user1CanViewObject2.should.be.true;
+        user1CanAmendObject2.should.be.true;
+        user2CanViewObject1.should.be.true;
+        user2CanAmendObject1.should.be.true;
+        user2CanViewObject2.should.be.true;
+        user2CanAmendObject2.should.be.true;
+
+    });
+});
+
+describe('revoke', () => {
+    it('should remove a single permission for a single user from a single model', async () => {
+        const repo = new ACLRepositoryMock([{
+            _id: "com.relativelimited.testobject.1",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012", "123"]
+                }
+            ],
+            created: new Date().toISOString()
+        }]);
+        const acl = new ACL(repo);
+        let permission = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.true;
+        const result = await acl.revoke('view', 'com.relativelimited.testobject.1', '123');
+        result.should.be.true;
+        permission = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.false;
+    });
+
+    it('should remove a multiple permissions for a single user from a single model', async () => {
+        const repo = new ACLRepositoryMock([{
+            _id: "com.relativelimited.testobject.1",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012", "123"]
+                },
+                {
+                    name: "amend",
+                    users: ["98765432", "24681012", "123"]
+                }
+            ],
+            created: new Date().toISOString()
+        }]);
+        const acl = new ACL(repo);
+        let permission = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.true;
+        permission = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.true;
+        const result = await acl.revoke(['view', 'amend'], 'com.relativelimited.testobject.1', '123');
+        result.should.be.true;
+        permission = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.false;
+        permission = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.false;
+    });
+
+    it('should remove a singe permission for a single user from a single model, leaving their other permissions intact', async () => {
+        const repo = new ACLRepositoryMock([{
+            _id: "com.relativelimited.testobject.1",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012", "123"]
+                },
+                {
+                    name: "amend",
+                    users: ["98765432", "24681012", "123"]
+                }
+            ],
+            created: new Date().toISOString()
+        }]);
+        const acl = new ACL(repo);
+        let permission = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.true;
+        permission = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.true;
+        const result = await acl.revoke('amend', 'com.relativelimited.testobject.1', '123');
+        result.should.be.true;
+        permission = await acl.userCan('view', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.true;
+        permission = await acl.userCan('amend', 'com.relativelimited.testobject.1', '123');
+        permission.should.be.false;
+    });
+});
+
+describe('permissions', () => {
+    it('should return a list of only the permissions the user has on the given model', async () => {
+        const repo = new ACLRepositoryMock([{
+            _id: "com.relativelimited.testobject.1",
+            acl: [
+                {
+                    name: "view",
+                    users: ["98765432", "24681012", "123"]
+                },
+                {
+                    name: "amend",
+                    users: ["98765432", "24681012", "123"]
+                }
+            ],
+            created: new Date().toISOString()
+        }, {
+            _id: "com.relativelimited.testobject.2",
+            acl: [
+                {
+                    name: "list",
+                    users: ["98765432", "24681012", "123"]
+                },
+                {
+                    name: "execute",
+                    users: ["98765432", "24681012", "123"]
+                }
+            ],
+            created: new Date().toISOString()
+        }]);
+        const acl = new ACL(repo);
+        const permissions = await acl.permissions('123', 'com.relativelimited.testobject.1');
+        permissions.length.should.equal(2);
+        permissions.should.contain('view').and.contain('amend').and.not.contain('list').and.not.contain('execute');
     });
 });

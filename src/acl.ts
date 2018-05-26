@@ -60,17 +60,22 @@ export default class ACL {
         return objects;
     }
 
-    async grant(permission: string, model: string | Array<string>, user: string): Promise<boolean> {
+    async grant(permission: string|Array<string>, model: string | Array<string>, user: string|Array<string>): Promise<boolean> {
         const models = ACL.arrayFromSingleOrArray(model);
+        const users = ACL.arrayFromSingleOrArray(user);
+        const perms = ACL.arrayFromSingleOrArray(permission);
         return this.repo.getAll({_id: {$in: models}}).then((aclDocs: Array<ACLDocument>) => {
             const saves: Array<Promise<ACLDocument>> = [];
-            aclDocs.forEach(aclDoc => ACL.addPermissionForUserToDoc(aclDoc, permission, user));
+            aclDocs.forEach(aclDoc => {
+                ACL.addPermissionForUserToDoc(aclDoc, perms, users)
+                saves.push(this.repo.save(aclDoc));
+            });
             models.filter(m => !aclDocs.find(doc => doc._id === m)).forEach(m => {
                 const aclDoc: ACLDocument = ACL.addPermissionForUserToDoc({
                     _id: m,
                     acl: [],
                     created: new Date().toISOString()
-                }, permission, user);
+                }, perms, users);
                 saves.push(this.repo.create(aclDoc));
             });
             return Promise.all(saves).then(result => {
@@ -81,25 +86,79 @@ export default class ACL {
         });
     }
 
-    private static addPermissionForUserToDoc(doc: ACLDocument, permission: string, user: string): ACLDocument {
-        if (!ACL.docHasPermissionFor(doc, permission, user)) {
-            const po: PermissionObject = {
-                name: permission,
-                users: []
-            };
-            if (!ACL.aclHasPermission(doc.acl, permission)) {
-                doc.acl.push(po);
-            }
-            const permissionOb: PermissionObject = ACL.aclHasPermission(doc.acl, permission) || po;
-            permissionOb.users.push(user);
-            return doc;
-        } else {
-            return doc;
-        }
+    private static addPermissionForUserToDoc(doc: ACLDocument, permission: string|Array<string>, user: string|Array<string>): ACLDocument {
+        const users = ACL.arrayFromSingleOrArray(user);
+        const perms = ACL.arrayFromSingleOrArray(permission);
+        users.forEach(u => {
+            perms.forEach(perm => {
+                if (!ACL.docHasPermissionFor(doc, perm, u)) {
+                    const po: PermissionObject = {
+                        name: perm,
+                        users: []
+                    };
+                    if (!ACL.aclHasPermission(doc.acl, perm)) {
+                        doc.acl.push(po);
+                    }
+                    const permissionOb: PermissionObject = ACL.aclHasPermission(doc.acl, perm) || po;
+                    permissionOb.users.push(u);
+                }
+            });
+        });
+        return doc;
     }
 
     private static aclHasPermission(acl: Array<PermissionObject>, permission: string): PermissionObject | null {
         return acl.find(po => po.name === permission) || null;
+    }
+
+    async revoke(permission: string|Array<string>, model: string|Array<string>, user: string|Array<string>): Promise<boolean>
+    {
+        const models = ACL.arrayFromSingleOrArray(model);
+        const users = ACL.arrayFromSingleOrArray(user);
+        const perms = ACL.arrayFromSingleOrArray(permission);
+        return this.repo.getAll({_id: {$in: models}}).then((aclDocs: Array<ACLDocument>) => {
+            const saves: Array<Promise<ACLDocument>> = [];
+            aclDocs.forEach(aclDoc => {
+                ACL.removePermissionForUserFromDoc(aclDoc, perms, users);
+                saves.push(this.repo.save(aclDoc));
+            });
+            return Promise.all(saves).then(result => {
+                return true;
+            }).catch(() => false);
+        }).catch((error) => {
+            return false;
+        });
+    }
+
+    private static removePermissionForUserFromDoc(doc: ACLDocument, permission: string|Array<string>, user: string|Array<string>): ACLDocument {
+        const users = ACL.arrayFromSingleOrArray(user);
+        const perms = ACL.arrayFromSingleOrArray(permission);
+        users.forEach(u => {
+            perms.forEach(perm => {
+                if (ACL.docHasPermissionFor(doc, perm, u)) {
+                    const po: PermissionObject = {
+                        name: perm,
+                        users: []
+                    };
+                    const permissionOb: PermissionObject = ACL.aclHasPermission(doc.acl, perm) || po;
+                    permissionOb.users.splice(permissionOb.users.indexOf(u),1);
+                }
+            });
+        });
+        return doc;
+    }
+
+    async permissions(user: string, model: string): Promise<Array<string>> {
+        const aclDoc = await this.repo.getByID(model);
+        const perms: Array<string> = [];
+        if (aclDoc){
+            aclDoc.acl.forEach(permission => {
+                if (permission.users.indexOf(user) > -1){
+                    perms.push(permission.name);
+                }
+            });
+        }
+        return perms;
     }
 
 }
